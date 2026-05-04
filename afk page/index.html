@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFK Rewards - Earn Credits While Idle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --bg-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #10b981;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Glassmorphism utils */
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Login Screen */
+        #login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100vw;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 100;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .login-card {
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card h1 {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-card p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(15, 23, 42, 0.6);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border-radius: 8px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.1s ease;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Dashboard Screen */
+        #dashboard-screen {
+            display: none;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 24px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 32px;
+            margin-bottom: 24px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 24px;
+        }
+
+        .stat-box {
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .stat-box .label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .action-area {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .claim-btn {
+            background: linear-gradient(135deg, #10b981, #059669);
+            padding: 16px 40px;
+            font-size: 1.2rem;
+            width: auto;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .claim-btn:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .claim-btn:disabled {
+            background: #475569;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Ad Grid */
+        .ad-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            flex: 1;
+        }
+
+        .ad-slot {
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s ease;
+        }
+
+        .ad-slot:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .ad-label {
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            transform: translateY(150%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .notification.show {
+            transform: translateY(0);
+        }
+
+        .notification.error {
+            background: #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="glass login-card">
+            <h1>AFK Rewards</h1>
+            <p>Leave this page open to earn free credits.</p>
+            <div class="input-group">
+                <input type="text" id="username-input" placeholder="Enter your CtrlPanel Username" autocomplete="off">
+            </div>
+            <button id="start-btn">Start Earning</button>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboard-screen">
+        <!-- Top Leaderboard (728x90) -->
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+            <script>
+              atOptions = {
+                'key' : '82bfbe009e6f816d73ff9086e33f6564',
+                'format' : 'iframe',
+                'height' : 90,
+                'width' : 728,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/82bfbe009e6f816d73ff9086e33f6564/invoke.js"></script>
+        </div>
+
+        <header class="glass">
+            <div class="user-info">
+                <div class="avatar" id="user-avatar">U</div>
+                <div>
+                    <h2 id="display-username">Username</h2>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Status: <span style="color: #10b981;">● Online & Earning</span></p>
+                    
+                    <!-- Mobile Leaderboard (320x50) -->
+                    <div style="margin-top: 10px;">
+                        <script>
+                          atOptions = {
+                            'key' : '637dfc7d6a958766bfb2286276568dae',
+                            'format' : 'iframe',
+                            'height' : 50,
+                            'width' : 320,
+                            'params' : {}
+                          };
+                        </script>
+                        <script src="https://www.highperformanceformat.com/637dfc7d6a958766bfb2286276568dae/invoke.js"></script>
+                    </div>
+                </div>
+            </div>
+            <div class="stats-container">
+                <div class="stat-box">
+                    <div class="value" id="timer">00:00:00</div>
+                    <div class="label">Time AFK</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="credits" style="color: #6366f1;">0</div>
+                    <div class="label">Credits Earned</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Top Wide Banner (468x60) 1 -->
+        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+            <script>
+              atOptions = {
+                'key' : '4645598dc515f127a8d7d6cdc2a53b03',
+                'format' : 'iframe',
+                'height' : 60,
+                'width' : 468,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/4645598dc515f127a8d7d6cdc2a53b03/invoke.js"></script>
+        </div>
+
+        <!-- Top Wide Banner (468x60) 2 -->
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+            <script>
+              atOptions = {
+                'key' : '8a4f6d7713ed9e2e7b6b7fba9e6ab37b',
+                'format' : 'iframe',
+                'height' : 60,
+                'width' : 468,
+                'params' : {}
+              };
+            </script>
+            <script src="https://www.highperformanceformat.com/8a4f6d7713ed9e2e7b6b7fba9e6ab37b/invoke.js"></script>
+        </div>
+
+        <div class="action-area" style="gap: 16px;">
+            <button class="claim-btn" id="claim-btn" disabled>Claim Credits</button>
+            <a href="https://www.profitablecpmratenetwork.com/yzs2tkk8h?key=ad12bc0e91bd17b9f20fe15d405ff106" target="_blank" style="text-decoration: none;">
+                <button class="claim-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">Bonus Ad Link</button>
+            </a>
+        </div>
+
+        <!-- Ad Grid -->
+        <div class="ad-grid">
+            <!-- SLOT 1: Native Display Banner (NEW) -->
+            <div class="ad-slot" style="border: none; background: transparent;">
+                <script async="async" data-cfasync="false" src="https://pl29338917.profitablecpmratenetwork.com/ab87ccf834f55834d2622a430a661372/invoke.js"></script>
+                <div id="container-ab87ccf834f55834d2622a430a661372"></div>
+            </div>
+
+            <!-- SLOT 2: Iframe Banner Ad (300x160 NEW) -->
+            <div class="ad-slot" style="border: none; background: transparent;">
+                <script>
+                  atOptions = {
+                    'key' : '7115002d4869aee5baef36bcb3fa17fb',
+                    'format' : 'iframe',
+                    'height' : 300,
+                    'width' : 160,
+                    'params' : {}
+                  };
+                </script>
+                <script src="https://www.highperformanceformat.com/7115002d4869aee5baef36bcb3fa17fb/invoke.js"></script>
+            </div>
+
+            <!-- SLOT 3: Iframe Banner Ad (300x250 NEW) -->
+            <div class="ad-slot" style="border: none; background: transparent;">
+                <script>
+                  atOptions = {
+                    'key' : 'b7952e8db4496c6afb8ce9e8c7d850cb',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                  };
+                </script>
+                <script src="https://www.highperformanceformat.com/b7952e8db4496c6afb8ce9e8c7d850cb/invoke.js"></script>
+            </div>
+
+            <!-- SLOT 4: Iframe Banner Ad (300x250 OLD) -->
+            <div class="ad-slot" style="border: none; background: transparent;">
+                <script>
+                  atOptions = {
+                    'key' : '69c3103838380e4a260b200c69fc30ba',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                  };
+                </script>
+                <script src="https://www.highperformanceformat.com/69c3103838380e4a260b200c69fc30ba/invoke.js"></script>
+            </div>
+
+            <!-- SLOT 5: Iframe Banner Ad (160x300 OLD) -->
+            <div class="ad-slot" style="border: none; background: transparent;">
+                <script>
+                  atOptions = {
+                    'key' : '48c6d085734523b4a9ca7e861de3010c',
+                    'format' : 'iframe',
+                    'height' : 300,
+                    'width' : 160,
+                    'params' : {}
+                  };
+                </script>
+                <script src="https://www.highperformanceformat.com/48c6d085734523b4a9ca7e861de3010c/invoke.js"></script>
+            </div>
+
+            <!-- SLOT 6: Direct Link (High CTR Button) -->
+            <a href="https://www.profitablecpmratenetwork.com/yzs2tkk8h?key=ad12bc0e91bd17b9f20fe15d405ff106" target="_blank" class="ad-slot" style="border: none; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; text-decoration: none; cursor: pointer; display: flex; flex-direction: column; text-align: center; gap: 10px; transition: transform 0.2s;">
+                <span style="font-size: 1.5rem; font-weight: 800;">⚡ Boost Your Earnings</span>
+                <span style="font-size: 0.9rem; opacity: 0.9;">Visit our sponsors to earn extra credits!</span>
+            </a>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // Pointing to your local Python Flask Backend instead of directly to CtrlPanel
+        const BACKEND_URL = 'http://127.0.0.1:5000';
+        // ---------------------
+
+        // Elements
+        const loginScreen = document.getElementById('login-screen');
+        const dashboardScreen = document.getElementById('dashboard-screen');
+        const usernameInput = document.getElementById('username-input');
+        const startBtn = document.getElementById('start-btn');
+        const displayUsername = document.getElementById('display-username');
+        const userAvatar = document.getElementById('user-avatar');
+        const timerEl = document.getElementById('timer');
+        const creditsEl = document.getElementById('credits');
+        const claimBtn = document.getElementById('claim-btn');
+        const notification = document.getElementById('notification');
+
+        // State
+        let username = '';
+        let secondsAfk = 0;
+        let totalMinutes = 0;
+        let earnedCredits = 0;
+        let timerInterval;
+        let rewardInterval;
+
+        function saveState() {
+            if (!username) return;
+            localStorage.setItem('afk_state_' + username, JSON.stringify({
+                secondsAfk: secondsAfk,
+                totalMinutes: totalMinutes,
+                earnedCredits: earnedCredits
+            }));
+        }
+
+        function loadState() {
+            if (!username) return;
+            const saved = localStorage.getItem('afk_state_' + username);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    secondsAfk = parsed.secondsAfk || 0;
+                    totalMinutes = parsed.totalMinutes || 0;
+                    earnedCredits = parsed.earnedCredits || 0;
+                    
+                    updateTimerDisplay();
+                    creditsEl.textContent = earnedCredits;
+                    if (earnedCredits > 0) claimBtn.disabled = false;
+                } catch (e) {
+                    console.error("Error loading state", e);
+                }
+            }
+        }
+
+        // Start Earning & Verify Username
+        startBtn.addEventListener('click', async () => {
+            username = usernameInput.value.trim();
+            if (!username) {
+                showNotification('Please enter a username!', true);
+                return;
+            }
+
+            startBtn.disabled = true;
+            startBtn.textContent = 'Verifying User...';
+
+            try {
+                // We now call the local Python backend to verify the user (bypasses CORS)
+                const verifyUrl = `${BACKEND_URL}/api/verify?username=${username}`;
+                
+                const response = await fetch(verifyUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (response.status === 404) {
+                    showNotification('User not found in CtrlPanel!', true);
+                    startBtn.disabled = false;
+                    startBtn.textContent = 'Start Earning';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Backend API error: ${response.status}`);
+                }
+
+                // UI Transition
+                loginScreen.style.transform = 'translateY(-20px)';
+                loginScreen.style.opacity = '0';
+                
+                setTimeout(() => {
+                    loginScreen.style.display = 'none';
+                    dashboardScreen.style.display = 'flex';
+                    // Trigger reflow
+                    void dashboardScreen.offsetWidth;
+                    dashboardScreen.style.opacity = '1';
+                    
+                    // Initialize Dashboard
+                    displayUsername.textContent = username;
+                    userAvatar.textContent = username.charAt(0).toUpperCase();
+                    
+                    loadState(); // Restore their previous progress if it exists
+                    startAfkTracking();
+                    loadPopunderAds(); // ONLY load the popup ads after they reach the dashboard!
+                    
+                    if (secondsAfk > 0) {
+                        showNotification('Welcome back! Resuming AFK session.');
+                    } else {
+                        showNotification('User verified! Earning started.');
+                    }
+                }, 500);
+
+            } catch (error) {
+                console.error('Error verifying user:', error);
+                showNotification('Verification failed. Check console for details.', true);
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Earning';
+            }
+        });
+
+        // Enter key to start
+        usernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !startBtn.disabled) startBtn.click();
+        });
+
+        function loadPopunderAds() {
+            // Dynamically inject the popunder scripts so they don't trigger on the login screen
+            const scripts = [
+                "https://pl29338654.profitablecpmratenetwork.com/59/18/60/59186015e8e6c88f157d48662130238d.js",
+                "https://pl29338656.profitablecpmratenetwork.com/64/62/cd/6462cdaa2a485a204868376c54e8fdd4.js",
+                "https://pl29338924.profitablecpmratenetwork.com/f4/87/9f/f4879f59521ccf0df03bf152e6994b15.js",
+                "https://pl29338925.profitablecpmratenetwork.com/eb/6c/93/eb6c93b02acea6fb921da8dc91084b60.js"
+            ];
+            scripts.forEach(src => {
+                const s = document.createElement('script');
+                s.src = src;
+                document.body.appendChild(s);
+            });
+        }
+
+        let lastTickTime = Date.now();
+        let accumulatedMs = 0;
+
+        function startAfkTracking() {
+            lastTickTime = Date.now();
+            accumulatedMs = 0;
+
+            // We use a single interval but calculate the exact time passed using timestamps.
+            // This guarantees that even if the browser throttles background tabs, the time is 100% accurate!
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const deltaMs = now - lastTickTime;
+                lastTickTime = now;
+                
+                accumulatedMs += deltaMs;
+
+                // Process every full second that has passed
+                while (accumulatedMs >= 1000) {
+                    accumulatedMs -= 1000;
+                    secondsAfk++;
+                    
+                    // Every 60 seconds (1 minute), give rewards
+                    if (secondsAfk > 0 && secondsAfk % 60 === 0) {
+                        totalMinutes++;
+                        
+                        // 1 min = 1 coin, 5 min = 10 coins
+                        if (totalMinutes % 5 === 0) {
+                            earnedCredits += 10;
+                            showNotification(`+10 Bonus Credits Earned!`);
+                        } else {
+                            earnedCredits += 1;
+                            showNotification(`+1 Credit Earned!`);
+                        }
+                        
+                        creditsEl.textContent = earnedCredits;
+                        claimBtn.disabled = false;
+                        saveState();
+                        
+                        creditsEl.style.transform = 'scale(1.2)';
+                        setTimeout(() => creditsEl.style.transform = 'scale(1)', 200);
+                    }
+                }
+                
+                updateTimerDisplay();
+                
+                // Save state every roughly 10 seconds
+                if (secondsAfk % 10 === 0) saveState();
+                
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const h = Math.floor(secondsAfk / 3600).toString().padStart(2, '0');
+            const m = Math.floor((secondsAfk % 3600) / 60).toString().padStart(2, '0');
+            const s = (secondsAfk % 60).toString().padStart(2, '0');
+            timerEl.textContent = `${h}:${m}:${s}`;
+        }
+
+        // Claim Credits (API Call)
+        claimBtn.addEventListener('click', async () => {
+            if (earnedCredits <= 0) return;
+
+            // --- MAX PROFIT HACK ---
+            // Force the Direct Link ad to open in a new tab every single time they click claim!
+            window.open('https://www.profitablecpmratenetwork.com/yzs2tkk8h?key=ad12bc0e91bd17b9f20fe15d405ff106', '_blank');
+            // -----------------------
+
+            const creditsToClaim = earnedCredits;
+            claimBtn.disabled = true;
+            claimBtn.textContent = 'Claiming...';
+
+            try {
+                // Call the local Python backend to add credits safely
+                const apiUrl = `${BACKEND_URL}/api/claim`; 
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        credits: creditsToClaim
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+
+                // On success:
+                earnedCredits -= creditsToClaim;
+                creditsEl.textContent = earnedCredits;
+                saveState(); // Update saved state so they don't get double credits
+                showNotification(`Successfully claimed ${creditsToClaim} credits!`);
+                
+            } catch (error) {
+                console.error('Error claiming credits:', error);
+                showNotification('Failed to claim credits. Check console for details.', true);
+                claimBtn.disabled = false; // Re-enable so they can try again
+            } finally {
+                if (earnedCredits === 0) claimBtn.disabled = true;
+                claimBtn.textContent = 'Claim Credits';
+            }
+        });
+
+        function showNotification(message, isError = false) {
+            notification.textContent = message;
+            if (isError) {
+                notification.classList.add('error');
+            } else {
+                notification.classList.remove('error');
+            }
+            
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
